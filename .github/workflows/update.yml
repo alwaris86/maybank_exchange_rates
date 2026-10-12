@@ -1,9 +1,10 @@
 name: Update Maybank rates
 
 on:
-  schedule:
-    # Malaysian time is UTC+8. Four reads a day, in Malaysian working hours: 08:30, 11:30, 14:30, 17:30.
-    - cron: '30 0,3,6,9 * * *'
+  # Switched off 2026-10-12: Maybank does not answer GitHub's servers (the request timed out after 30 seconds), so a schedule
+  # could only fail, four times a day. To try again, restore:
+  #   schedule:
+  #     - cron: '30 0,3,6,9 * * *'    # 08:30, 11:30, 14:30, 17:30 Malaysian time
   workflow_dispatch:
 
 permissions:

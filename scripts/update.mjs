@@ -1,6 +1,7 @@
 // Fetches Maybank's public counter-rates page once, checks what came back, and rewrites rates.json only if the rates changed.
 //
-//   node scripts/update.mjs
+//   node scripts/update.mjs               fetch the page once
+//   node scripts/update.mjs page.html     read a saved copy of the page instead (View source, Select all, Copy, save)
 //
 // It fails loudly and leaves rates.json untouched when:
 //   - the site does not answer 200 (it may refuse automated visitors; this script does not try to get around that),
@@ -21,24 +22,29 @@ const fail = (msg) => {
   process.exit(1);
 };
 
-let res;
-try {
-  res = await fetch(URL_PAGE, {
-    headers: {
-      // Says plainly who is asking.
-      'user-agent': 'maybank_exchange_rates (+https://github.com/alwaris86/maybank_exchange_rates)',
-      accept: 'text/html',
-    },
-    signal: AbortSignal.timeout(30000),
-  });
-} catch (e) {
-  fail(`could not reach Maybank: ${e instanceof Error ? e.message : String(e)}`);
+const fileArg = process.argv[2];
+let html;
+if (fileArg) {
+  html = readFileSync(fileArg, 'utf8');
+} else {
+  let res;
+  try {
+    res = await fetch(URL_PAGE, {
+      headers: {
+        // Says plainly who is asking.
+        'user-agent': 'maybank_exchange_rates (+https://github.com/alwaris86/maybank_exchange_rates)',
+        accept: 'text/html',
+      },
+      signal: AbortSignal.timeout(30000),
+    });
+  } catch (e) {
+    fail(`could not reach Maybank: ${e instanceof Error ? e.message : String(e)}`);
+  }
+  if (res.status !== 200) fail(`Maybank answered HTTP ${res.status}; nothing was changed.`);
+  html = await res.text();
 }
-if (res.status !== 200) fail(`Maybank answered HTTP ${res.status}; nothing was changed.`);
-
-const html = await res.text();
 if (!html.includes('Foreign Exchange Counter Rates')) {
-  fail(`the response is not the rates page (${html.length} bytes, starts: ${JSON.stringify(html.slice(0, 120))}); nothing was changed.`);
+  fail(`this is not the rates page (${html.length} bytes, starts: ${JSON.stringify(html.slice(0, 120))}); nothing was changed.`);
 }
 
 const parsed = parseMaybank(html);

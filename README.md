@@ -2,7 +2,9 @@
 
 Maybank's public **foreign exchange counter rates**, read from [its own page](https://www.maybank2u.com.my/maybank2u/malaysia/en/personal/rates/forex_rates.page) into one JSON file, `rates.json`.
 
-Maybank publishes these rates as a web page and offers no feed. This repository reads that page a few times a day and keeps the result in a form a program can use.
+Maybank publishes these rates as a web page and offers no feed. This repository reads that page and keeps the result in a form a program can use.
+
+> **Status, 2026-10-12: it does not update by itself.** Maybank's site does not answer GitHub's servers (a test run timed out after 30 seconds), so the scheduled job is switched off. The reader works on a saved copy of the page; see [Updating by hand](#updating-by-hand). `rates.json` holds `as_at: null` until somebody does that.
 
 > **Indicative only.** Maybank describes these as "indicative for the day and subject to change without prior notice". This project is not affiliated with or endorsed by Maybank. Check the source page before relying on a figure. The rates belong to Maybank.
 
@@ -40,19 +42,22 @@ https://raw.githubusercontent.com/alwaris86/maybank_exchange_rates/main/rates.js
 - `selling_tt_od` is what Maybank charges to sell you the currency by telegraphic transfer or overdraft: the usual rate for paying an overseas supplier. `buying_*` is what Maybank pays you for it.
 - Before the first successful read, `as_at` is `null` and `rates` is empty. Treat that as "no data".
 
-## How it updates
+## Updating by hand
 
-A GitHub Actions workflow (`.github/workflows/update.yml`) runs at 08:30, 11:30, 14:30 and 17:30 Malaysian time and can be started by hand from the **Actions** tab. Each run:
+Open Maybank's rates page in a browser, press **Ctrl+U** for the page source, **Select all**, **Copy**, and save it as a file, say `page.html`. Then:
 
-1. checks the reader against the fixture in `test/`,
-2. asks Maybank for the page once, identifying itself plainly,
-3. checks what came back, and rewrites `rates.json` only if the rates changed.
+```
+node scripts/update.mjs page.html
+git add rates.json && git commit -m "Maybank rates" && git push
+```
 
-It stops without touching `rates.json`, and the run goes **red**, when the site does not answer normally, when the page is not the rates page, when fewer than 20 currencies can be read, when the time cannot be read or is older than what is held, or when a figure looks wrong. A red run is the signal to look. The last good rates stay in the file with their own `as_at`, so a consumer can see how old they are and decide for itself.
+It checks what it was given, and rewrites `rates.json` only if the rates changed. It refuses, and changes nothing, when the file is not the rates page, when fewer than 20 currencies can be read, when the "Last Update" time cannot be read or is older than what is held, or when a figure looks wrong (a selling rate below the buying rate, or USD outside 2 to 10 ringgit).
 
-**It is not guaranteed to keep working.** Maybank's site may refuse automated visitors, and its page can change shape. This project does not try to get around either: if Maybank says no, it stops. If you depend on it, check `as_at` is recent, and keep a manual way to enter a rate.
+## Updating automatically (not working)
 
-GitHub also pauses scheduled workflows in a repository with no activity for 60 days. Every change to the rates is a commit, which counts; if the rates stand still and you see no runs, press **Run workflow** once.
+`.github/workflows/update.yml` reads the page itself, once, identifying itself plainly, and commits if the rates changed. It runs when started by hand from the **Actions** tab. Its schedule is switched off because Maybank does not answer GitHub's servers, so it could only fail. This project does not try to get around that: if Maybank says no, it stops. If that changes, restore the `schedule:` lines in the workflow (the times are in a comment there).
+
+If you depend on `rates.json`, always read `as_at` and show it beside the rate, and keep a manual way to enter a rate.
 
 ## Running it yourself
 
@@ -60,7 +65,7 @@ Node 18 or later, no dependencies:
 
 ```
 npm test         # the reader against the fixture
-npm run update   # one read of Maybank's page
+npm run update   # one read of Maybank's page (usually refused; see above)
 ```
 
 ## Files
