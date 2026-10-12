@@ -59,6 +59,12 @@ It checks what it was given, and rewrites `rates.json` only if the rates changed
 
 If you depend on `rates.json`, always read `as_at` and show it beside the rate, and keep a manual way to enter a rate.
 
+## Live endpoint on Vercel (being tested)
+
+`api/rates.mjs` is a Vercel function: `GET /api/rates` reads Maybank's page when asked and answers with the same JSON as `rates.json`. It is set to run in Singapore (`vercel.json`), caches each answer at Vercel's edge for 30 minutes so Maybank is asked about twice an hour at most, and answers `502` with the reason, caching nothing, whenever Maybank does not hand over the rates page. It does not try to get around a refusal.
+
+Whether Maybank answers Vercel's servers is not known until it has been tried. If `/api/rates` answers 502, use `rates.json` and read its `as_at`.
+
 ## Running it yourself
 
 Node 18 or later, no dependencies:
@@ -74,5 +80,7 @@ npm run update   # one read of Maybank's page (usually refused; see above)
 | --- | --- |
 | `rates.json` | The data. |
 | `scripts/parse.mjs` | Reads the page's HTML table. Unknown currency names are reported, never guessed. |
-| `scripts/update.mjs` | Fetches, checks, writes. |
+| `scripts/update.mjs` | Fetches (or reads a saved page), checks, writes `rates.json`. |
+| `scripts/read.mjs` | The checks both of the above stop on. |
+| `api/rates.mjs` | The Vercel function. |
 | `test/` | The reader against a fixture shaped like the page. |
