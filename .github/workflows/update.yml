@@ -1,0 +1,39 @@
+name: Update Maybank rates
+
+on:
+  schedule:
+    # Malaysian time is UTC+8. Four reads a day, in Malaysian working hours: 08:30, 11:30, 14:30, 17:30.
+    - cron: '30 0,3,6,9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the reader against its fixture
+        run: node --test
+
+      - name: Read Maybank's page
+        run: node scripts/update.mjs
+
+      - name: Commit if the rates changed
+        run: |
+          if [ -n "$(git status --porcelain rates.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add rates.json
+            git commit -m "Maybank rates as at $(node -p "JSON.parse(require('fs').readFileSync('rates.json','utf8')).as_at")"
+            git push
+          else
+            echo "No change to commit."
+          fi

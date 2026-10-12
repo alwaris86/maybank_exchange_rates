@@ -1,0 +1,9 @@
+{
+  "bank": "MAYBANK",
+  "source": "https://www.maybank2u.com.my/maybank2u/malaysia/en/personal/rates/forex_rates.page",
+  "as_at": null,
+  "fetched_at": null,
+  "disclaimer": "No rates yet: the first successful read has not happened. Do not use this file until `as_at` has a value.",
+  "quoted_in": "MYR per `unit` of the currency (1 or 100)",
+  "rates": []
+}

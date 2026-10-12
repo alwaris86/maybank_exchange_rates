@@ -1,0 +1,14 @@
+{
+  "name": "maybank_exchange_rates",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Maybank's public foreign exchange counter rates, read from its own page into rates.json.",
+  "scripts": {
+    "test": "node --test",
+    "update": "node scripts/update.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
